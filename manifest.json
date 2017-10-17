@@ -1,0 +1,16 @@
+{
+    "manifest_version": 2,
+    "name": "Cooking Convertor",
+    "version": "0.1.0",
+    "default_locale": "en",
+    "description": "Converts units in-line, primarily intended for cooking.",
+    "icon": {
+        "128": "icon128.png"
+    },
+    "author": "Andrew Gilbert",
+    "content_scripts": [
+      {
+        "matches": ["http://*/*"],
+        "js": ["cooking_convert.js"]
+    }
+}
