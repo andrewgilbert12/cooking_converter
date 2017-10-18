@@ -1,7 +1,7 @@
 // TODO put these functions in proper place, call add_select_to_units on page load
 // TODO more unit types
 // TODO is there a way to combine e.g. g, grams? could do when adding select opts
-var convert = function(quant, from_unit, to_unit){
+var convert = function(quant, from_unit, to_unit) {
   // relative to grams
   let units = {
       "g": 1,
@@ -29,17 +29,17 @@ var convert = function(quant, from_unit, to_unit){
 
 // TODO: deal with different types of cups
 // TODO: deal with fractional (1/2, 1 1/2, etc.) quants
-var change_unit = function(e){
+var change_unit = function(e) {
   sel_elem = e.target;
   sel_id =  sel_elem.id;
 
   i = sel_id.split('_')[1];
-  quant_id = 'UNIT_' + i;
-  quant_to_id = 'UNIT_TO_' + i;
-  cur_unit_id = 'CUR_UNIT_' + i;
+  quant_id = 'quant_' + i;
+  quant_to_id = 'quant_to_' + i;
+  cur_unit_id = 'cur_unit_' + i;
 
   quant_elem = document.getElementById(quant_id);
-  quant = quant_elem.innerText;
+  quant = quant_elem.textContent;
 
   cur_unit_elem = document.getElementById(cur_unit_id);
   cur_unit = cur_unit_elem.value;
@@ -48,8 +48,8 @@ var change_unit = function(e){
   quant_elem.textContent = convert(quant, cur_unit, new_unit);
 
   quant_to_elem = document.getElementById(quant_to_id);
-  if(quant_to_elem){
-    quant_to = quant_to_elem.innerText;
+  if (quant_to_elem) {
+    quant_to = quant_to_elem.textContent;
     quant_to_elem.textContent = convert(quant_to, cur_unit, new_unit);
   }
 
@@ -57,38 +57,92 @@ var change_unit = function(e){
 };
 
 // TODO add full list of units to select options
+// TODO match parenthesis in regex: "1 (0.25 ounce) package yeast", etc.
 // TODO add underline/formatting to unit
 var add_select_to_units = function(node) {
-  if(!node){
+  console.log('fired add select');
+  if (!node) {
     node = document.body;
   }
-  var re = /((?:\d+(?:\s*|.))?\d+(?:\/\d+)?)\s?(?:(?:-|to)\s*((?:\d+(?:\s*|.))?\d+(?:\/\d+))?)?\s?(cup|tbsp|tablespoon|tsp|teaspoon|(?:mili|centi)?(?:lit(?:er|re)|gram)|pound|lb|ounce|oz|ml|cl|g|mg|kg|kilogram)(?:s)?\s+((?:\w+[ \t]*){1,3})/i;
-  let i = 0;
-  while(match = re.exec(node.innerHTML)){
-    ++i;
 
-    let sel_id = "SEL_" + i;
-    let quant_id = "UNIT_" + i;
-    let quant_to_id = "UNIT_TO_" + i;
-    let cur_unit_id = "CUR_UNIT_" + i;
-    let repl = '<div id="'+quant_id+'" class="UNDERLINECLASS">$1</div> ';
-    if(quant_to) {
-      repl += ' - <div id="'+quant_to_id+'" class="UNDERLINECLASS">$2</div> ';
+  let count = 0;
+  let re = /((?:\d+(?:\s*|.))?\d+(?:\/\d+)?)\s?(?:(?:-|to)\s*((?:\d+(?:\s*|.))?\d+(?:\/\d+))?)?\s?(cup|t(?:b)?sp|t(?:ea|able)spoon|(?:mili|centi)?(?:lit(?:er|re)|gram)|pound|lb|ounce|oz|ml|cl|g|mg|kg|kilogram)(?:s)?\s+((?:\w+[ \t]*){1,3})/i;
+
+  for (let i = 0; i < node.childNodes.length; i++) {
+    child = node.childNodes[i];
+    if (let match  = re.exec(child.textContent)) {
+      if (child.childNodes.length > 0) {
+        add_select_to_units(child);
+      } else {
+        // TODO refactor this into a million functions
+        match_node = document.createElement("DIV");
+
+        let quant = match[1];
+        let quant_id = "quant_"; // TODO add count
+        let quant_node = document.createElement("DIV");
+        quant_node.setAttribute("id", quant_id);
+        quant_node.appendChild(document.createTextNode(quant));
+        match_node.appendChild(quant_node);
+
+        let quant_to = match[2];
+        if (quant_to) {
+          let quant_to_id = "quant_to_"; // TODO
+          let quant_to_node = document.createElement("DIV");
+          quant_to_node.setAttribute("id", quant_to_id);
+          quant_to_node.appendChild(document.createTextNode(quant_to));
+          let quant_to_wrap_node = document.createElement("DIV");
+          quant_to_wrap_node.appendChild(document.createTextNode(" - "));
+          quant_to_wrap_node.appendChild(quant_to_node);
+          match_node.appendChild(quant_to_wrap_node);
+        }
+
+        let cur_unit = match[3];
+
+        let cur_unit_id = "cur_unit_"; // TODO
+        let hidden_node = document.createElement("INPUT");
+        hidden_node.setAttribute("id", cur_unit_id);
+        hidden_node.setAttribute("value", cur_unit);
+        hidden_node.setAttribute("type", "hidden");
+        match_node.appendChild(hidden_node)
+
+        let sel_id = "sel_"; // TODO
+        let sel_node = document.createElement("SELECT");
+        sel_node.setAttribute("id", sel_id);
+        // TODO add select
+        // TODO for all valid options
+          let opt = document.createElement("OPTION");
+          opt.setAttribute("value",cur_unit);
+          sel_node.appendChild(opt);
+          opt = document.createElement("OPTION");
+          opt.setAttribute("value","grams");
+          sel_node.appendChild(opt);
+        // TODO end for
+        match_node.appendChild(sel_node);
+ 
+        let desc = match[4];
+        let desc_id = "desc_"; // TODO
+        let desc_node = document.createElement("DIV");
+        desc_node.setAttribute("id", desc_id);
+        desc_node.appendChild(document.createTextNode(desc));
+        match_node.appendChild(desc_node);
+
+        pre_match = child.textContent.substring(0,match["index"]);
+        pre_node = document.createTextNode(pre_match);
+
+        post_match = child.textContent.substring(match["index"]+match["length"]+1);
+        post_node = document.createTextNode(post_match)
+
+        child.parentElement.insertBefore(pre_node, child)
+        child.parentElement.insertBefore(match_node, child)
+        child.parentElement.insertBefore(post_node, child)
+        child.parentElement.removeChild(child)
+
+        document.getElementById(sel_id).addEventListener("change",change_unit);
+      }
     }
-    repl += '<select id="'+sel_id+'" TODOADDALLTHEOPTIONSANDANONCHANGE>' +
-              '<option>$3</option>' +
-              '<option>tablespoons</option>' +
-              '</select> $4';
-
-    quant_to = match[2]; // "X - Y oz" -> quant_from = X, quant_to = Y
-    cur_unit = match[3];
-    node.innerHTML = node.innerHTML.replace(re, repl);
-    hidden = document.createElement("INPUT");
-    hidden.setAttribute("id", cur_unit_id);
-    hidden.setAttribute("value", cur_unit);
-    hidden.setAttribute("type", "hidden");
-    document.body.appendChild(hidden);
-    document.getElementById(sel_id).addEventListener("change", change_unit); // TODO: this doesn't work, fix it
   }
 };
 
+}
+
+window.onload = add_select_to_units;
