@@ -56,6 +56,13 @@ var change_unit = function(e) {
   cur_unit_elem.value = new_unit;
 };
 
+var inc_count = function(){
+  let i = localStorage.getItem('add_select_match_count');
+  if(!i) i = 1;
+  localStorage.setItem('add_select_match_count',parseInt(i)+1);
+  return i;
+};
+
 // TODO add full list of units to select options
 // TODO match parenthesis in regex: "1 (0.25 ounce) package yeast", etc.
 // TODO add underline/formatting to unit
@@ -74,11 +81,13 @@ var add_select_to_units = function(node) {
       if (child.childNodes.length > 0) {
         add_select_to_units(child);
       } else {
+        let i = inc_count();
+
         // TODO refactor this into a million functions
         match_node = document.createElement("DIV");
 
         let quant = match[1];
-        let quant_id = "quant_"; // TODO add count
+        let quant_id = "quant_"+i;
         let quant_node = document.createElement("DIV");
         quant_node.setAttribute("id", quant_id);
         quant_node.appendChild(document.createTextNode(quant));
@@ -86,7 +95,7 @@ var add_select_to_units = function(node) {
 
         let quant_to = match[2];
         if (quant_to) {
-          let quant_to_id = "quant_to_"; // TODO
+          let quant_to_id = "quant_to_"+i;
           let quant_to_node = document.createElement("DIV");
           quant_to_node.setAttribute("id", quant_to_id);
           quant_to_node.appendChild(document.createTextNode(quant_to));
@@ -98,14 +107,14 @@ var add_select_to_units = function(node) {
 
         let cur_unit = match[3];
 
-        let cur_unit_id = "cur_unit_"; // TODO
+        let cur_unit_id = "cur_unit_"+i;
         let hidden_node = document.createElement("INPUT");
         hidden_node.setAttribute("id", cur_unit_id);
         hidden_node.setAttribute("value", cur_unit);
         hidden_node.setAttribute("type", "hidden");
         match_node.appendChild(hidden_node)
 
-        let sel_id = "sel_"; // TODO
+        let sel_id = "sel_"+i;
         let sel_node = document.createElement("SELECT");
         sel_node.setAttribute("id", sel_id);
         // TODO add select
