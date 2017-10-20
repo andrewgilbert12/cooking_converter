@@ -67,17 +67,14 @@ var inc_count = function(){
 // TODO match parenthesis in regex: "1 (0.25 ounce) package yeast", etc.
 // TODO add underline/formatting to unit
 var add_select_to_units = function(node) {
-  console.log('fired add select');
-  if (!node) {
-    node = document.body;
-  }
 
   let count = 0;
   let re = /((?:\d+(?:\s*|.))?\d+(?:\/\d+)?)\s?(?:(?:-|to)\s*((?:\d+(?:\s*|.))?\d+(?:\/\d+))?)?\s?(cup|t(?:b)?sp|t(?:ea|able)spoon|(?:mili|centi)?(?:lit(?:er|re)|gram)|pound|lb|ounce|oz|ml|cl|g|mg|kg|kilogram)(?:s)?\s+((?:\w+[ \t]*){1,3})/i;
 
   for (let i = 0; i < node.childNodes.length; i++) {
     child = node.childNodes[i];
-    if (let match  = re.exec(child.textContent)) {
+    let match = re.exec(child.textContent);
+    if (match) {
       if (child.childNodes.length > 0) {
         add_select_to_units(child);
       } else {
@@ -129,17 +126,19 @@ var add_select_to_units = function(node) {
         match_node.appendChild(sel_node);
  
         let desc = match[4];
-        let desc_id = "desc_"; // TODO
+        let desc_id = "desc_"+i;
         let desc_node = document.createElement("DIV");
         desc_node.setAttribute("id", desc_id);
         desc_node.appendChild(document.createTextNode(desc));
         match_node.appendChild(desc_node);
 
         pre_match = child.textContent.substring(0,match["index"]);
-        pre_node = document.createTextNode(pre_match);
+        pre_node = child.cloneNode();
+        pre_node.textContent = pre_match;
 
-        post_match = child.textContent.substring(match["index"]+match["length"]+1);
-        post_node = document.createTextNode(post_match)
+        post_match = child.textContent.substring(match["index"]+match[0].length+1);
+        post_node = child.cloneNode();
+        post_node.textContent = post_match;
 
         child.parentElement.insertBefore(pre_node, child)
         child.parentElement.insertBefore(match_node, child)
@@ -152,6 +151,6 @@ var add_select_to_units = function(node) {
   }
 };
 
-}
-
-window.onload = add_select_to_units;
+window.onload = function() {
+  add_select_to_units(document.body);
+};
