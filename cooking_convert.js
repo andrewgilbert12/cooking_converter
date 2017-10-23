@@ -1,33 +1,28 @@
 // TODO put these functions in proper place, call add_select_to_units on page load
-// TODO more unit types
-// TODO is there a way to combine e.g. g, grams? could do when adding select opts
 var convert = function(quant, from_unit, to_unit) {
   // relative to grams
   let units = {
       "g": 1,
-      "gram": 1,
       "oz": 28.3495,
       "lb": 453.592,
       "kg": 1000,
-      "cup": {
-          "sugar": 201,
-          "brown_sugar": 220,
-          "oats": 85,
-          "syrup": 340,
-          "flour": 128,
-          "bread_flour": 136,
-          "butter": 227
-      },
-      "teaspoon": 4.76,
-      "tablespoon": 14.3
+      "cup_sugar": 201,
+      "cup_brown_sugar": 220,
+      "cup_oat": 85,
+      "cup_syrup": 340,
+      "cup_flour": 128,
+      "cup_bread_flour": 136,
+      "cup_butter": 227,
+      "cup_water": 235,
+      "cup_milk": 240,
+      "cup_oil": 216,
+      "tsp": 4.76,
+      "tbsp": 14.3
   };
-  from_unit = from_unit.replace(/s$/,'');
-  to_unit = to_unit.replace(/s$/,'');
   new_quant = quant * units[from_unit] / units[to_unit];
   return new_quant;
 };
 
-// TODO: deal with different types of cups
 // TODO: deal with fractional (1/2, 1 1/2, etc.) quants
 var change_unit = function(e) {
   sel_elem = e.target;
@@ -56,12 +51,61 @@ var change_unit = function(e) {
   cur_unit_elem.value = new_unit;
 };
 
-var inc_count = function(){
+var inc_count = function() {
   let i = localStorage.getItem('add_select_match_count');
-  if(!i) i = 1;
+  if (!i) i = 1;
   localStorage.setItem('add_select_match_count',parseInt(i)+1);
   return i;
 };
+
+var get_unit = function(unit, desc) {
+  let conversions, default_unit = unit, comp = unit;
+
+  if (unit.match('cup')) {
+    // for cups we use the description to make a guess as to what type of density the ingredient has
+    conversions =  {
+      "brown" : "cup_brown_sugar",
+      "sugar" : "cup_sugar",
+      "oat" : "cup_oat",
+      "honey" : "cup_syrup",
+      "syrup" : "cup_syrup",
+      "molasses" : "cup_syrup",
+      "flour" : "cup_flour",
+      "bread" : "cup_bread",
+      "butter" : "cup_butter",
+      "margarine" : "cup_butter"
+    };
+    default_unit = "cup_flour";
+    comp = desc;
+  } else {
+    // for other ingredients, we check the unit itself for abbreviations
+    conversions = {
+      "kilo" : "kg",
+      "gram" : "g",
+      "pound" : "lb",
+      "ounce" : "oz",
+      "teaspoon" : "tsp",
+      "tablespoon" : "tbsp"
+    };
+  }
+
+  for (let type in conversions){
+    if (comp.match(type)) {
+      return conversions[type];
+    }
+  }
+  return default_unit;
+};
+
+var quant_int_val = function(i){
+  if (!i) return undefined;
+
+  let match = i.match(/\s*(\d+(?!\/))?(?:\s*(\d+)\/(\d+))?/);
+  let val = 0;
+  if (match[1]) val = parseInt(match[1]);
+  if (match[2] && match[3]) val += match[2] / match[3];
+  return val;
+}
 
 // TODO add full list of units to select options
 // TODO match parenthesis in regex: "1 (0.25 ounce) package yeast", etc.
@@ -83,14 +127,14 @@ var add_select_to_units = function(node) {
         // TODO refactor this into a million functions
         match_node = document.createElement("DIV");
 
-        let quant = match[1];
+        let quant = quant_int_val(match[1]);
         let quant_id = "quant_"+i;
         let quant_node = document.createElement("DIV");
         quant_node.setAttribute("id", quant_id);
         quant_node.appendChild(document.createTextNode(quant));
         match_node.appendChild(quant_node);
 
-        let quant_to = match[2];
+        let quant_to = quant_int_val(match[2]);
         if (quant_to) {
           let quant_to_id = "quant_to_"+i;
           let quant_to_node = document.createElement("DIV");
@@ -102,7 +146,7 @@ var add_select_to_units = function(node) {
           match_node.appendChild(quant_to_wrap_node);
         }
 
-        let cur_unit = match[3];
+        let cur_unit = get_unit(match[3],match[4]);
 
         let cur_unit_id = "cur_unit_"+i;
         let hidden_node = document.createElement("INPUT");
@@ -117,10 +161,12 @@ var add_select_to_units = function(node) {
         // TODO add select
         // TODO for all valid options
           let opt = document.createElement("OPTION");
-          opt.setAttribute("value",cur_unit);
+          opt.setAttribute("value", cur_unit);
+          opt.textContent = match[3];
           sel_node.appendChild(opt);
           opt = document.createElement("OPTION");
-          opt.setAttribute("value","grams");
+          opt.setAttribute("value", "g");
+          opt.textContent = "grams";
           sel_node.appendChild(opt);
         // TODO end for
         match_node.appendChild(sel_node);
