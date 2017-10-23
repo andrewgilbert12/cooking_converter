@@ -93,7 +93,7 @@ var cc_util = {
         return conversions[type];
       }
     }
-    return default_unit;
+    return default_unit.toLowerCase();
   },
 
   "quant_int_val" : function(i){
